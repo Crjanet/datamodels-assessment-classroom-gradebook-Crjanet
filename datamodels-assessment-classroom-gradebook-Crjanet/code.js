@@ -216,41 +216,59 @@ function getRandomScore(maxScore) {
 
 // Given a student ID, return the student's object
 function getStudentById(studentId) {
-  
+  let student = classroom.students.find(student => student.id === studentId) 
+     return student
 }
 
 // Given an assignment ID, return the assignment's object
 function getAssignmentById(assignmentId) {
-  
+  let assignment = classroom.assignments.find(assignment => assignment.id === assignmentId)
+     return assignment
 }
 
 // Add together the pointsPossible on every assignment and return that number
 function getTotalPossiblePoints() {
-  
+  let totalPoints = 0
+  for(let assignment of classroom.assignments){
+    totalPoints += assignment.pointsPossible
+  }
+     return totalPoints
 }
 
 // Given a student id, add together their score for every assignment
 function calculateStudentTotalPoints(studentId) {
-  
+  let student = getStudentById(studentId) 
+  let totalScore = 0
+  for(let assignment of student.assignmentGrades){
+    totalScore += assignment.score
+  }
+     return totalScore
 }
 
 // Given a student id, calculate their overall grade percentage
 // Hint: get their total points, and the total possible points, and use those to getGradePercentage
-function calculateStudentOverallGradePercentage(studentId) {
-  
+function calculateStudentOverallGradePercentage(studentId) { 
+  let totalPoints = calculateStudentTotalPoints(studentId)
+  let totalPossibleP = getTotalPossiblePoints()
+     return getGradePercentage(totalPoints, totalPossibleP)
 }
 
 // Given a student id, return their letter grade
 // Hint: This can call the previous function and pass it to getLetter Grade
 function getLetterGradeForStudent(studentId) {
-  
+  let percentage = calculateStudentOverallGradePercentage(studentId) 
+     return getLetterGrade(percentage)
 }
 
 // calculate the average overall grade of all of the students in the classroom
 // Get the grade percentage of each student and add them all together
 // Divide that by the total number of students
 function calculateAvgGradePercentageInClassroom() {
-  
+  let totalGradePercentage = 0
+  for(let student of classroom.students){
+    totalGradePercentage += calculateStudentOverallGradePercentage(student.id)
+  }
+     return totalGradePercentage / classroom.students.length
 }
 
 // -----------------------------------------------------------------------------------
@@ -262,8 +280,11 @@ function calculateAvgGradePercentageInClassroom() {
 function renderAssignmentsGrades(assignmentGrades) {
   let html = "<ul>";
 
-  for (let assignmentGrade of assignmentGrades) {
-    html += `<li>**AssignmentName** - **Score**/**PossiblePoints**</li>`
+    for(let assignmentGrade of assignmentGrades){
+    let {assignmentId, score} = assignmentGrade
+    let assignment = getAssignmentById(assignmentId)
+    html += `<li>${assignment.name} - ${score} / ${assignment.pointsPossible}</li>`
+    
   }
   
   html += "</ul>"
@@ -278,11 +299,12 @@ function renderStudents(students) {
 
   for (let student of students) {
     // Hint: Only render the <span class="warning"></span> if the student's overall grade isFailingGrade().  A ternary would be great here...
-
+  let letterGrade = getLetterGradeForStudent(student.id) 
+  let gradePercentage = calculateStudentOverallGradePercentage(student.id)
     html += `
       <li>
-        <div><strong>${student.firstName} **LastName**</strong></div>
-        <div>Grade: **LetterGrade** - **GradePercentage** <span class="warning"></span></div>
+        <div><strong>${student.firstName} ${student.lastName}</strong></div>
+        <div>Grade: ${letterGrade} - ${gradePercentage} ${isFailingGrade(gradePercentage) ? '<span class="warning"></span>' : ''} </div>
         <div>Assignment Scores:</div>
         ${renderAssignmentsGrades(student.assignmentGrades)}
       </li>
@@ -301,9 +323,9 @@ function renderGradebook() {
   let html = `
     <header>
       <h2>Gradebook</h2>
-      <h4>**ClassroomName** with **TeacherName**</h4>
-      <h4>Number of Assignments: **NumberOfAssignments**</h4>
-      <h4>Average Grade Percentage: **AverageGradePercentInClass**</h4>
+      <h4>${classroom.name} with ${classroom.teacher.name}</h4>
+      <h4>Number of Assignments: ${classroom.assignments.length}</h4>
+      <h4>Average Grade Percentage: ${calculateAvgGradePercentageInClassroom()}</h4>
     </header>
     ${renderStudents(classroom.students)}
   `;
